@@ -46,7 +46,6 @@ function setup_environment()
       "gettext" \
       "git" \
       "gperf" \
-      "kconfig-frontends" \
       "make" \
       "mtools" \
       "nasm" \
@@ -139,10 +138,6 @@ function setup_environment()
     return
   fi
 
-  if [ ${#INSTALLS[*]} -eq 1 ] && [ "${INSTALLS[0]}" == "kconfig-frontends" ]; then
-    return
-  fi
-
   echo "*************************************************************************************"
   echo "The environment of Vela depends on above tools, Run the following command to install:"
   echo ""
@@ -151,15 +146,6 @@ function setup_environment()
     if [[ "${INSTALLS[$i]}" == *":i386" ]]; then
       echo " sudo dpkg --add-architecture i386"
       break
-    fi
-  done
-
-  for (( i = 0; i < ${#INSTALLS[*]}; i++)); do
-    result=`apt-cache search ${INSTALLS[$i]}`
-    if [ "$result" == "" ]; then
-      if [ "${INSTALLS[$i]}" == "kconfig-frontends" ]; then
-        unset INSTALLS[$i]
-      fi
     fi
   done
 
@@ -187,7 +173,7 @@ function setup_toolchain()
   echo -e "${B}*           "                         "               *${N}"
   echo -e "${B}**""**""**""**""**""**""**""**""**""**""**""**""**""***${N}"
 
-  SYSTEM=`uname | tr '[:upper:]' '[:lower:]'`
+  SYSTEM=`uname | sed -E 's/(MINGW|MSYS)[^[:space:]]+/windows/g' | tr '[:upper:]' '[:lower:]'`
   SYS_ARCH=`uname -m | sed 's/arm64/aarch64/'`
 
   if [ ${SYSTEM} == "darwin" ]; then
@@ -203,6 +189,8 @@ function setup_toolchain()
       "xtensa" \
       "arm" \
       "arm64" \
+      "aarch64" \
+      "riscv" \
       "risc-v" \
       "x86_64" \
       "tc32" )
@@ -210,6 +198,8 @@ function setup_toolchain()
   TOOLCHAIN=(\
             "gcc" \
             "clang" )
+
+  export PATH=${ROOTDIR}/prebuilts/build-tools/${SYSTEM}-${SYS_ARCH}/bin:${PATH}
 
   export WASI_SDK_PATH=${ROOTDIR}/prebuilts/clang/${SYSTEM}/wasm
   export PATH=${WASI_SDK_PATH}:$PATH
@@ -231,8 +221,13 @@ function setup_toolchain()
       elif [ -d ${ROOTDIR}/prebuilts/${TOOLCHAIN[$j]}/${SYSTEM}/${ARCH[$i]}/bin ]; then
         export PATH=${ROOTDIR}/prebuilts/${TOOLCHAIN[$j]}/${SYSTEM}/${ARCH[$i]}/bin:$PATH
       fi
-      if [ -d ${ROOTDIR}/prebuilts/${TOOLCHAIN[$j]}/${SYSTEM}-${SYS_ARCH}/${ARCH[$i]}-none-linux-gnu/bin ]; then
-        export PATH=${ROOTDIR}/prebuilts/${TOOLCHAIN[$j]}/${SYSTEM}-${SYS_ARCH}/${ARCH[$i]}-none-linux-gnu/bin:$PATH
+      for TOOLCHAIN_BIN in ${ROOTDIR}/prebuilts/${TOOLCHAIN[$j]}/${SYSTEM}-${SYS_ARCH}/${ARCH[$i]}-none-{eabi,elf}/bin; do
+        if [ -d ${TOOLCHAIN_BIN} ]; then
+          export PATH=${TOOLCHAIN_BIN}:${PATH}
+        fi
+      done
+      if [ -d ${ROOTDIR}/prebuilts/${TOOLCHAIN[$j]}/${SYSTEM}-${SYS_ARCH}/${ARCH[$i]}-esp32s3-elf/bin ]; then
+        export PATH=${ROOTDIR}/prebuilts/${TOOLCHAIN[$j]}/${SYSTEM}-${SYS_ARCH}/${ARCH[$i]}-esp32s3-elf/bin:$PATH
       fi
     done
   done
@@ -285,29 +280,25 @@ function setup_toolchain()
 
 function build_board()
 {
+  case "$(uname -s)" in
+    Linux) host_opt="-l"
+    ;;
+    Darwin) host_opt="-m"
+    ;;
+    MSYS*|MINGW*) host_opt="-g"
+    ;;
+    *) host_opt=""
+    ;;
+  esac
+
   echo -e "Build command line:"
-  echo -e "  ${TOOLSDIR}/configure.sh -e $1"
+  echo -e "  ${TOOLSDIR}/configure.sh -e ${host_opt} $1"
   echo -e "  make -C ${NUTTXDIR} EXTRAFLAGS="$EXTRA_FLAGS" ${@:2}"
   echo -e "  make -C ${NUTTXDIR} savedefconfig"
 
-  KCONFIG_ARGS="--enable-mconf --disable-nconf --disable-gconf --disable-qconf"
-  if [ `uname` == "Darwin" ]; then
-    KCONFIG_ARGS+=" --disable-shared --enable-static"
-  fi
-
-  if [ ! -f "${ROOTDIR}/prebuilts/kconfig-frontends/bin/kconfig-conf" ] &&
-     [ ! -x "$(command -v kconfig-conf)" ]; then
-    pushd ${ROOTDIR}/prebuilts/kconfig-frontends
-    ./configure --prefix=${ROOTDIR}/prebuilts/kconfig-frontends ${KCONFIG_ARGS} 1>/dev/null
-    touch aclocal.m4 Makefile.in
-    make install 1>/dev/null
-    popd
-  fi
-  export PATH=${ROOTDIR}/prebuilts/kconfig-frontends/bin:$PATH
-
   setup_toolchain $1
 
-  if ! ${TOOLSDIR}/configure.sh -e $1; then
+  if ! ${TOOLSDIR}/configure.sh -e ${host_opt} $1; then
     echo "Error: ############# config ${1} fail ##############"
     exit 1
   fi

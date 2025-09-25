@@ -510,6 +510,13 @@ config ARCH_BOARD_ESP32S3_MEADOW
 		The ESP32-S3-Meadow is a small-sized board produced by WildernessLabs
 		featuring the ESP32-S3 CPU with 32MiB Octal SPI PSRAM and 64 MiB flash.
 
+config ARCH_BOARD_ESP32S3_LCKFB_SZPI
+	bool "LCKFB SZPI ESP32-S3"
+	depends on ARCH_CHIP_ESP32S3WROOM1N16R8
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS if ESP32S3_GPIO_IRQ
+
 config ARCH_BOARD_ESP32C6_DEVKITC
 	bool "Espressif ESP32-C6-DevKitC-1"
 	depends on ARCH_CHIP_ESP32C6WROOM1
@@ -1803,6 +1810,12 @@ config ARCH_BOARD_STM32H745I_DISCO
 		STMicro STM32H745I-DISCO board based on the STMicro
 		STM32H745XI MCU.
 
+config ARCH_BOARD_STM32H750B_DK
+	bool "STM32H750B-DK board"
+	depends on ARCH_CHIP_STM32H750B
+	---help---
+		STMicro STM32H750B-DK board based on the STMicro STM32H750B MCU.
+
 config ARCH_BOARD_LINUM_STM32H753BI
 	bool "Linum (STM32H753BI) board"
 	depends on ARCH_CHIP_STM32H753BI
@@ -2518,6 +2531,15 @@ config ARCH_BOARD_STM32F103_MINIMUM
 	select ARCH_HAVE_IRQBUTTONS
 	---help---
 		A configuration for the STM32F103 Minimum board.
+
+config ARCH_BOARD_STM32F407_RM
+	bool "STM32F407IGH6 ARM Development Board"
+	depends on ARCH_CHIP_STM32F407IG
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		A configuration for the STM32F407 RoboMaster development board.
 
 config ARCH_BOARD_STM32F411_MINIMUM
 	bool "STM32F411CEU6 Minimum ARM Development Board"
@@ -3295,6 +3317,7 @@ config ARCH_BOARD
 	default "esp32s3-lhcbit"            if ARCH_BOARD_ESP32S3_LHCBIT
 	default "esp32s3-box"               if ARCH_BOARD_ESP32S3_BOX
 	default "esp32s3-korvo-2"           if ARCH_BOARD_ESP32S3_KORVO_2
+	default "lckfb-szpi-esp32s3"        if ARCH_BOARD_ESP32S3_LCKFB_SZPI
 	default "esp32c6-devkitc"           if ARCH_BOARD_ESP32C6_DEVKITC
 	default "esp32c6-devkitm"           if ARCH_BOARD_ESP32C6_DEVKITM
 	default "esp32h2-devkit"            if ARCH_BOARD_ESP32H2_DEVKIT
@@ -3402,6 +3425,7 @@ config ARCH_BOARD
 	default "nucleo-h743zi2"            if ARCH_BOARD_NUCLEO_H743ZI2
 	default "nucleo-h745zi"             if ARCH_BOARD_NUCLEO_H745ZI
 	default "stm32h745i-disco"          if ARCH_BOARD_STM32H745I_DISCO
+	default "stm32h750b-dk"             if ARCH_BOARD_STM32H750B_DK
 	default "linum-stm32h753bi"         if ARCH_BOARD_LINUM_STM32H753BI
 	default "openh743i"                 if ARCH_BOARD_OPENH743I
 	default "nucleo-l073rz"             if ARCH_BOARD_NUCLEO_L073RZ
@@ -3512,6 +3536,7 @@ config ARCH_BOARD
 	default "stm32f051-discovery"       if ARCH_BOARD_STM32F051_DISCOVERY
 	default "stm32f072-discovery"       if ARCH_BOARD_STM32F072_DISCOVERY
 	default "stm32f103-minimum"         if ARCH_BOARD_STM32F103_MINIMUM
+	default "stm32f407-robomaster"		if ARCH_BOARD_STM32F407_RM
 	default "stm32f411-minimum"         if ARCH_BOARD_STM32F411_MINIMUM
 	default "stm3210e-eval"             if ARCH_BOARD_STM3210E_EVAL
 	default "stm3220g-eval"             if ARCH_BOARD_STM3220G_EVAL
@@ -4071,6 +4096,9 @@ endif
 if ARCH_BOARD_STM32H745I_DISCO
 source "boards/arm/stm32h7/stm32h745i-disco/Kconfig"
 endif
+if ARCH_BOARD_STM32H750B_DB
+source "boards/arm/stm32h7/stm32h750b-dk/Kconfig"
+endif
 if ARCH_BOARD_LINUM_STM32H753BI
 source "boards/arm/stm32h7/linum-stm32h753bi/Kconfig"
 endif
@@ -4241,6 +4269,9 @@ source "boards/arm/stm32/stm32butterfly2/Kconfig"
 endif
 if ARCH_BOARD_STM32F103_MINIMUM
 source "boards/arm/stm32/stm32f103-minimum/Kconfig"
+endif
+if ARCH_BOARD_STM32F407_RM
+source "boards/arm/stm32/stm32f407-robomaster/Kconfig"
 endif
 if ARCH_BOARD_STM32F411_MINIMUM
 source "boards/arm/stm32/stm32f411-minimum/Kconfig"
@@ -4469,6 +4500,9 @@ source "boards/xtensa/esp32s3/esp32s3-box/Kconfig"
 endif
 if ARCH_BOARD_ESP32S3_KORVO_2
 source "boards/xtensa/esp32s3/esp32s3-korvo-2/Kconfig"
+endif
+if ARCH_BOARD_ESP32S3_LCKFB_SZPI
+source "boards/xtensa/esp32s3/lckfb-szpi-esp32s3/Kconfig"
 endif
 #if ARCH_BOARD_ESP32C6_DEVKITC
 #source "boards/risc-v/esp32c6/esp32c6-devkitc/Kconfig"
